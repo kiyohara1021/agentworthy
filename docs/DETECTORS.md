@@ -298,9 +298,9 @@ A coding agent benefits from knowing module boundaries and system responsibiliti
 
 ### Evidence
 
-- architecture section in README
-- `docs/architecture.md`
-- `docs/design.md`
+- architecture section in README; Japanese headings such as `アーキテクチャ`, `全体構成`, or `ディレクトリ構成` count too
+- `docs/architecture.md`, or any document under an `architecture/` directory (e.g. `docs/architecture/data-model.md`)
+- `docs/design.md` (a `design/` directory is not counted, because it usually holds UI designs)
 - ADR index
 - AGENTS.md architecture/module guidance
 

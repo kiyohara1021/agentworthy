@@ -109,4 +109,32 @@ describe("instructions.architecture", () => {
     expect(finding.status).toBe("pass");
     expect(finding.evidence?.[0]?.path).toBe("AGENTS.md");
   });
+
+  it("treats a document inside docs/architecture/ as an architecture document", async () => {
+    const finding = await analyzeFiles({ "docs/architecture/data-model.md": `# Data model\n\n${ARCHITECTURE_BODY}\n\n${ARCHITECTURE_BODY}\n` });
+
+    expect(finding.status).toBe("pass");
+    expect(finding.evidence?.[0]?.path).toBe("docs/architecture/data-model.md");
+  });
+
+  it("does not count UI designs under docs/design/ as architecture", async () => {
+    const finding = await analyzeFiles({ "docs/design/screens.md": `# Screens\n\n${ARCHITECTURE_BODY}\n` });
+
+    expect(finding.status).toBe("fail");
+  });
+
+  it("recognizes a Japanese architecture heading", async () => {
+    const body = [
+      "画面は React で描画し、データの取得と保存は TanStack Query に任せる。サーバーは Express の",
+      "ルート・サービス・データアクセスの三層に分け、ルートは入力の検証だけを行う。業務の規則は",
+      "サービスに集め、データベースに触れるのはデータアクセスの層だけにしている。共有パッケージに",
+      "入力の検証規則と型を置き、画面とサーバーの両方から同じ規則を使う。こうしておくと、検証の",
+      "規則を変えたときに画面とサーバーの片方だけが古いまま残ることがない。並び順の計算も共有",
+      "パッケージにあり、ドラッグ中の仮の並びと保存する値が食い違わないようにしている。",
+    ].join("\n");
+    const finding = await analyzeFiles({ "README.md": `# サンプル\n\n## アーキテクチャ\n\n${body}\n` });
+
+    expect(finding.status).toBe("pass");
+    expect(finding.evidence?.[0]?.label).toContain("アーキテクチャ");
+  });
 });

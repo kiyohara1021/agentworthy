@@ -112,8 +112,8 @@ A useful high-level system or repository map exists.
 
 Examples:
 
-- `docs/architecture.md`
-- architecture section in README
+- `docs/architecture.md`, or documents under `docs/architecture/`
+- architecture section in README (English or Japanese headings, e.g. `## アーキテクチャ`)
 - ADR index
 - concise module ownership explanation
 
