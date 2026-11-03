@@ -73,6 +73,68 @@ function classify(name: string, body: string): ScriptKind[] {
   return kinds.size === 0 ? ["other"] : [...kinds];
 }
 
+/** `npm run lint`, `npm test`, `pnpm lint`, `yarn lint`, `bun run lint`: a call to another script. */
+const RUN_SCRIPT = /^(?:npm|pnpm|yarn|bun)(?: run| run-script)? ([a-z0-9@][\w:.@/-]*)/;
+/** `npm-run-all -s lint test`, `run-s lint test`, `run-p "lint:*"`. */
+const RUN_ALL = /^(?:npm-run-all|run-s|run-p)\s+(.+)$/;
+/** Composer's `@lint` reference to another script. */
+const COMPOSER_REFERENCE = /^@([\w:.-]+)$/;
+
+/** How far an aggregate script is followed, e.g. `check` → `verify` → `test`. */
+const MAX_SCRIPT_DEPTH = 5;
+
+/**
+ * Names of scripts that the given command segments call, lowercased.
+ * Globs such as `lint:*` are kept as written and matched by {@link scriptNameMatches}.
+ */
+export function invokedScriptNames(segments: readonly string[]): string[] {
+  const names: string[] = [];
+  for (const segment of segments) {
+    const runAll = RUN_ALL.exec(segment);
+    if (runAll?.[1] !== undefined) {
+      for (const token of runAll[1].split(/\s+/)) {
+        const name = token.replace(/^["']|["']$/g, "");
+        if (name !== "" && !name.startsWith("-")) names.push(name);
+      }
+      continue;
+    }
+    const name = RUN_SCRIPT.exec(segment)?.[1] ?? COMPOSER_REFERENCE.exec(segment)?.[1];
+    if (name !== undefined) names.push(name);
+  }
+  return names;
+}
+
+export function scriptNameMatches(reference: string, name: string): boolean {
+  const lowerName = name.toLowerCase();
+  if (!reference.includes("*")) return reference === lowerName;
+  const escaped = reference.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+  return new RegExp(`^${escaped}$`).test(lowerName);
+}
+
+/**
+ * Adds the kinds of the scripts each script calls, so `check: "npm run typecheck && npm test"`
+ * counts as both. Cycles and deep chains stop at {@link MAX_SCRIPT_DEPTH}.
+ */
+function withCalledKinds(scripts: readonly { script: DiscoveredScript; calls: readonly string[] }[]): DiscoveredScript[] {
+  const resolve = (index: number, depth: number, visiting: Set<number>): Set<ScriptKind> => {
+    const entry = scripts[index];
+    const kinds = new Set<ScriptKind>(entry?.script.kinds ?? []);
+    if (!entry || depth >= MAX_SCRIPT_DEPTH) return kinds;
+    visiting.add(index);
+    for (const reference of entry.calls) {
+      for (const [other, candidate] of scripts.entries()) {
+        if (visiting.has(other) || !scriptNameMatches(reference, candidate.script.name)) continue;
+        for (const kind of resolve(other, depth + 1, visiting)) kinds.add(kind);
+      }
+    }
+    visiting.delete(index);
+    if (kinds.size > 1) kinds.delete("other");
+    return kinds;
+  };
+
+  return scripts.map(({ script }, index) => ({ ...script, kinds: [...resolve(index, 0, new Set())] }));
+}
+
 function scriptBody(value: unknown): string | undefined {
   if (typeof value === "string") return value;
   // Composer allows an array of commands for a single script name.
@@ -91,11 +153,13 @@ async function readManifestScripts(
   const parsed = safeParseJson(raw);
   if (!isRecord(parsed) || !isRecord(parsed.scripts)) return [];
 
-  return Object.entries(parsed.scripts).flatMap(([name, value]) => {
+  const entries = Object.entries(parsed.scripts).flatMap(([name, value]) => {
     const body = scriptBody(value);
     if (body === undefined) return [];
-    return [{ name, command: toCommand(name), source, kinds: classify(name, body) }];
+    const calls = invokedScriptNames(toCommandSegments(body.toLowerCase().split("\n")));
+    return [{ script: { name, command: toCommand(name), source, kinds: classify(name, body) }, calls }];
   });
+  return withCalledKinds(entries);
 }
 
 /** `target:` at the start of a line, excluding `VAR := value` assignments. */

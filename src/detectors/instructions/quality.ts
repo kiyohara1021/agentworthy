@@ -74,7 +74,7 @@ export const qualityInstructionsDetector: Detector = {
     }
 
     const documented: DocumentedCommand[] = QUALITY_KINDS.flatMap((kind) =>
-      findDocumentedCommands(docs, kind),
+      findDocumentedCommands(docs, kind, scripts),
     );
 
     const discoveredScripts = QUALITY_KINDS.flatMap((kind) => scriptsOfKind(scripts, kind));
