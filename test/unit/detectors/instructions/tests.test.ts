@@ -90,4 +90,42 @@ describe("instructions.tests", () => {
 
     expect(finding.score).toBe(5);
   });
+
+  it("treats a documented aggregate script that runs the tests as a test command", async () => {
+    const finding = await analyzeFiles({
+      "package.json": JSON.stringify({
+        scripts: { typecheck: "tsc --noEmit", test: "node --test", check: "npm run typecheck && npm test" },
+      }),
+      "README.md": "# Example\n\n## Development\n\n```bash\nnpm run check\n```\n",
+      "test/example.test.js": "",
+    });
+
+    expect(finding.status).toBe("pass");
+    expect(finding.evidence?.map((entry) => entry.label).join(" ")).toContain("package script that runs the tests");
+    // The script name is repository text and is never echoed in evidence.
+    expect(JSON.stringify(finding.evidence)).not.toContain("check");
+  });
+
+  it("follows aggregate scripts through several levels and npm-run-all", async () => {
+    const finding = await analyzeFiles({
+      "package.json": JSON.stringify({
+        scripts: { "test:unit": "vitest run", verify: "run-s lint test:*", ci: "npm run verify", lint: "eslint ." },
+      }),
+      "README.md": "# Example\n\nRun `pnpm ci` before opening a pull request.\n",
+      "test/example.test.js": "",
+    });
+
+    expect(finding.status).toBe("pass");
+  });
+
+  it("does not loop on scripts that call each other", async () => {
+    const finding = await analyzeFiles({
+      "package.json": JSON.stringify({ scripts: { a: "npm run b", b: "npm run a" } }),
+      "README.md": "# Example\n\n```bash\nnpm run a\n```\n",
+      "test/example.test.js": "",
+    });
+
+    expect(finding.status).not.toBe("pass");
+  });
 });
+

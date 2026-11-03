@@ -222,7 +222,11 @@ Agents should validate changes before proposing them.
 
 ### Evidence
 
-Documentation referencing tests or known test commands.
+Documentation referencing tests or known test commands. A documented package script
+(`npm run check`, `pnpm verify`, Composer `check`) counts when the script runs the tests,
+directly or through other scripts (`npm run …`, `run-s`/`run-p`/`npm-run-all`, Composer
+`@script`), up to five calls deep. The same applies to lint and type-check commands in
+`instructions.quality`.
 
 ### Partial scoring signals
 

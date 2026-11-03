@@ -11,6 +11,12 @@ between minor versions; such changes are called out below.
 
 ### Changed
 
+- `instructions.tests` and `instructions.quality` accept a documented aggregate script, such
+  as `npm run check`, when the script runs the tests, the linter, or the type checker —
+  directly or through other scripts (`npm run …`, `run-s` / `run-p` / `npm-run-all`, Composer
+  `@script`), up to five calls deep. Evidence uses a fixed label and never the script name.
+  Repositories documented this way score higher; other scores do not change.
+
 - `instructions.architecture` and `context.architecture` recognize documents under an
   `architecture/` directory (e.g. `docs/architecture/data-model.md`), and Japanese
   architecture, structure, and decision headings (`アーキテクチャ`, `ディレクトリ構成`,
