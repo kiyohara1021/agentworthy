@@ -17,6 +17,12 @@ between minor versions; such changes are called out below.
   `@script`), up to five calls deep. Evidence uses a fixed label and never the script name.
   Repositories documented this way score higher; other scores do not change.
 
+- `instructions.architecture` and `context.architecture` recognize documents under an
+  `architecture/` directory (e.g. `docs/architecture/data-model.md`), and Japanese
+  architecture, structure, and decision headings (`アーキテクチャ`, `ディレクトリ構成`,
+  `設計判断`, …). Repositories documented this way score higher; other scores do not change.
+  A `design/` directory is still not counted, since it usually holds UI designs.
+
 ## 0.1.0 — unreleased
 
 First public release. Message: **audit coding-agent readiness in one command.**
