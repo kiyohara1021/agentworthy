@@ -11,6 +11,10 @@ between minor versions; such changes are called out below.
 
 ### Changed
 
+- `instructions.setup` counts `swift build`, `go build`, and `dotnet build` as documented setup,
+  as it already did for `cargo build`: each fetches dependencies on the first build. A Swift
+  package whose README says `swift build` no longer reports "Setup is implied but not documented".
+
 - `instructions.tests` and `instructions.quality` accept a documented aggregate script, such
   as `npm run check`, when the script runs the tests, the linter, or the type checker —
   directly or through other scripts (`npm run …`, `run-s` / `run-p` / `npm-run-all`, Composer

@@ -55,6 +55,13 @@ describe("matchCommands", () => {
     }
   });
 
+  it("counts a first build that fetches dependencies as setup", () => {
+    for (const command of ["swift build", "swift build -c release", "go build ./...", "dotnet build", "cargo build"]) {
+      expect(matchCommands(toCommandSegments([command]), "setup"), command).not.toHaveLength(0);
+    }
+    expect(matchCommands(toCommandSegments(["swift test"]), "setup")).toHaveLength(0);
+  });
+
   it("anchors patterns so prose and code samples are not commands", () => {
     // `black` is a formatter, but also a colour in a CSS example.
     expect(matchCommands(toCommandSegments(["color: black;"]), "lint")).toHaveLength(0);
