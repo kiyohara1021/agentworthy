@@ -9,7 +9,11 @@ between minor versions; such changes are called out below.
 
 ## Unreleased
 
-_Nothing yet._
+### Changed
+
+- `instructions.setup` counts `swift build`, `go build`, and `dotnet build` as documented setup,
+  as it already did for `cargo build`: each fetches dependencies on the first build. A Swift
+  package whose README says `swift build` no longer reports "Setup is implied but not documented".
 
 ## 0.1.0 — unreleased
 
