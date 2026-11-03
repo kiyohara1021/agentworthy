@@ -2,6 +2,7 @@ import type { RepositoryContext } from "../core/repository-context.js";
 import { perContext } from "./cache.js";
 import { matchCommands, toCommandSegments, type CommandKind, type CommandPattern } from "./commands.js";
 import { parseDocument, type DocumentSignals } from "./markdown.js";
+import { invokedScriptNames, scriptNameMatches, type DiscoveredScript } from "./scripts.js";
 
 /**
  * Documentation discovery.
@@ -144,8 +145,27 @@ export interface DocumentedCommand {
 export function findDocumentedCommands(
   docs: readonly DocumentationFile[],
   kind: CommandKind,
+  scripts: readonly DiscoveredScript[] = [],
 ): DocumentedCommand[] {
-  return docs.flatMap((doc) =>
-    matchCommands(doc.commands, kind).map((pattern) => ({ doc, pattern })),
-  );
+  return docs.flatMap((doc) => {
+    const direct = matchCommands(doc.commands, kind).map((pattern) => ({ doc, pattern }));
+    if (direct.length > 0) return direct;
+    // `npm run check` documents the tests when the `check` script runs them.
+    const viaScript = invokedScriptNames(doc.commands).some((reference) =>
+      scripts.some((script) => scriptNameMatches(reference, script.name) && script.kinds.includes(kind)),
+    );
+    return viaScript ? [{ doc, pattern: SCRIPT_PATTERNS[kind] }] : [];
+  });
 }
+
+/**
+ * Stable labels for a documented script that runs a command of each kind. The script's
+ * own name is repository text, so it is never put in the label.
+ */
+const SCRIPT_PATTERNS: Record<CommandKind, CommandPattern> = {
+  setup: { label: "package script that sets up the project", kinds: ["setup"], pattern: /$^/ },
+  dev: { label: "package script that starts the project", kinds: ["dev"], pattern: /$^/ },
+  test: { label: "package script that runs the tests", kinds: ["test"], pattern: /$^/ },
+  lint: { label: "package script that runs the linter", kinds: ["lint"], pattern: /$^/ },
+  typecheck: { label: "package script that runs the type checker", kinds: ["typecheck"], pattern: /$^/ },
+};

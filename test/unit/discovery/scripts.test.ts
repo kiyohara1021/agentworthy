@@ -87,4 +87,38 @@ describe("discoverScripts", () => {
   it("returns nothing for a repository with no script definitions", async () => {
     expect(await scriptsFor({ "README.md": "# empty" })).toStrictEqual([]);
   });
+
+  it("adds the kinds of the scripts an aggregate script calls", async () => {
+    const scripts = await scriptsFor({
+      "package.json": JSON.stringify({
+        scripts: {
+          typecheck: "tsc --noEmit",
+          "test:unit": "vitest run",
+          verify: "run-p typecheck \"test:*\"",
+          check: "npm run verify && npm pack --dry-run",
+          deep1: "npm run deep2", deep2: "npm run deep3", deep3: "npm run deep4", deep4: "npm run deep5", deep5: "npm run deep6", deep6: "npm run deep7", deep7: "npm test",
+          test: "node --test",
+          loop: "npm run loop",
+        },
+      }),
+    });
+    const kindsOf = (name: string) => scripts.find((script) => script.name === name)?.kinds;
+
+    expect(kindsOf("verify")).toEqual(expect.arrayContaining(["typecheck", "test"]));
+    expect(kindsOf("check")).toEqual(expect.arrayContaining(["typecheck", "test"]));
+    expect(kindsOf("check")).not.toContain("other");
+    // Five calls deep is followed; six is past the limit.
+    expect(kindsOf("deep2")).toContain("test");
+    expect(kindsOf("deep1")).toStrictEqual(["other"]);
+    expect(kindsOf("loop")).toStrictEqual(["other"]);
+  });
+
+  it("follows Composer @script references", async () => {
+    const scripts = await scriptsFor({
+      "composer.json": JSON.stringify({ scripts: { test: "phpunit", check: ["@test", "@lint"], lint: "pint --test" } }),
+    });
+
+    expect(scripts.find((script) => script.name === "check")?.kinds).toEqual(expect.arrayContaining(["test", "lint"]));
+  });
 });
+

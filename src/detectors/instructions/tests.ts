@@ -52,7 +52,7 @@ export const testInstructionsDetector: Detector = {
     ]);
     const docs = repositoryDocumentation(allDocs);
 
-    const documented = findDocumentedCommands(docs, "test");
+    const documented = findDocumentedCommands(docs, "test", scripts);
 
     if (documented.length > 0) {
       const documentingPaths = new Set(documented.map((match) => match.doc.path));

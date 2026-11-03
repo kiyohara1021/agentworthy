@@ -222,7 +222,11 @@ Agents should validate changes before proposing them.
 
 ### Evidence
 
-Documentation referencing tests or known test commands.
+Documentation referencing tests or known test commands. A documented package script
+(`npm run check`, `pnpm verify`, Composer `check`) counts when the script runs the tests,
+directly or through other scripts (`npm run …`, `run-s`/`run-p`/`npm-run-all`, Composer
+`@script`), up to five calls deep. The same applies to lint and type-check commands in
+`instructions.quality`.
 
 ### Partial scoring signals
 
@@ -298,9 +302,9 @@ A coding agent benefits from knowing module boundaries and system responsibiliti
 
 ### Evidence
 
-- architecture section in README
-- `docs/architecture.md`
-- `docs/design.md`
+- architecture section in README; Japanese headings such as `アーキテクチャ`, `全体構成`, or `ディレクトリ構成` count too
+- `docs/architecture.md`, or any document under an `architecture/` directory (e.g. `docs/architecture/data-model.md`)
+- `docs/design.md` (a `design/` directory is not counted, because it usually holds UI designs)
 - ADR index
 - AGENTS.md architecture/module guidance
 
