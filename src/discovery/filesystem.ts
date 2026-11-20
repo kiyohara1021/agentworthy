@@ -123,7 +123,7 @@ export async function scanRepository(
         return;
       }
 
-      let size = 0;
+      let size: number;
       try {
         size = (await stat(path.join(absoluteDir, entry.name))).size;
       } catch {
